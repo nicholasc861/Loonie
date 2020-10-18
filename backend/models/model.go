@@ -13,6 +13,7 @@ type User struct {
 	Password  string `json:"Password"`
 }
 
+// Login Token Type
 type LoginToken struct {
 	UserID         uint
 	Name           string

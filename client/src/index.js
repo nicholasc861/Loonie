@@ -6,28 +6,27 @@ import {
   Route,
   Link
 } from 'react-router-dom'
-import { createStore, applyMiddleware } from 'redux'
-import { Provider } from 'react-redux'
-import thunk from 'redux-thunk'
 
-import rootReducer from './reducers'
 import NavigationBar from './components/NavigationBar'
+import Login from './components/Login'
 
-const store = createStore(rootReducer, applyMiddlware(thunk))
 
 const App = () => {
   return(
       <Router>
         <div>
           <NavigationBar />
+          <Switch>
+            <Route path="/login">
+              <Login />
+            </Route>
+          </Switch>
         </div>
       </Router>
   )
 };
 
 ReactDOM.render(
-  <Provider store={store}>
-    <App />
-  </Provider>, 
-  document.getElementById('root')
+    <App />,
+    document.getElementById('root')
 );
