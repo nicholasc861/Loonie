@@ -94,7 +94,7 @@ const Login = () => {
                     <FormLabel>Email or Username:</FormLabel>
                     <div>
                         <LoginInput
-                            type="text" 
+                            type="email" 
                             id="email" 
                             onChange={(e) => setEmail(e.target.value)} 
                         />

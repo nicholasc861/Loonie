@@ -7,18 +7,24 @@ import {
   Link
 } from 'react-router-dom'
 
+import GlobalStyle from './components/globalStyles'
 import NavigationBar from './components/NavigationBar'
 import Login from './components/Login'
+import Register from './components/Register'
 
 
 const App = () => {
   return(
       <Router>
+        <GlobalStyle />
         <div>
           <NavigationBar />
           <Switch>
             <Route path="/login">
               <Login />
+            </Route>
+            <Route path="/register">
+              <Register />
             </Route>
           </Switch>
         </div>
