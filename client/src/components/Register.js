@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 
 import styled from 'styled-components'
 import { Button, Form } from 'react-bootstrap'
@@ -6,6 +6,7 @@ import { Button, Form } from 'react-bootstrap'
 const RegisterHeader = styled.div`
     font-size: 20px;
     font-weight: 600;
+    text-align: center;
 `
 
 const RegisterWrapper = styled.div`
@@ -45,7 +46,7 @@ const RegisterForm = styled(Form)`
 
 `
 
-const LoginButton = styled(Button)`
+const RegisterButton = styled(Button)`
     background-color: #4AAD52;
     border: 0px;
     width: 90px;
@@ -61,14 +62,48 @@ const LoginButton = styled(Button)`
 `
 
 const Register = () => {
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+
     return (
         <RegisterWrapper>
             <RegisterForm>
                 <RegisterHeader>Questrack allows you visualize your investments on Questrade.</RegisterHeader>
-                <FormGroup>
-                    <RegisterInput></RegisterInput>
-                    <RegisterInput></RegisterInput>
-                </FormGroup>
+                <div class="row">
+                    <FormGroup>
+                        <FormLabel>First Name</FormLabel>
+                        <div>
+                            <RegisterInput style={{"margin-right": '10px'}}></RegisterInput>
+                        </div>
+                    </FormGroup>
+                    <FormGroup>
+                        <FormLabel>Last Name</FormLabel>
+                        <div>
+                            <RegisterInput></RegisterInput>
+                        </div>
+                    </FormGroup>
+                </div>
+                <div class="row">
+                    <FormGroup>
+                        <FormLabel>Email</FormLabel>
+                        <div>
+                            <RegisterInput style={{width: '678px'}}></RegisterInput>
+                        </div>
+                    </FormGroup>
+                </div>
+                <div class="row">
+                    <FormGroup>
+                    <FormLabel>Password (min 8. characters)</FormLabel>
+                        <div>
+                            <RegisterInput type="password" style={{width: '678px'}}></RegisterInput>
+                        </div>
+                    </FormGroup>
+                </div>
+                <div class="row" style={{"align-items": "center"}}>
+                    <RegisterButton>Register!</RegisterButton>
+                </div>
             </RegisterForm>
         </RegisterWrapper>
     )

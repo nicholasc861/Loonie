@@ -11,7 +11,7 @@ import GlobalStyle from './components/globalStyles'
 import NavigationBar from './components/NavigationBar'
 import Login from './components/Login'
 import Register from './components/Register'
-
+import Dashboard from './components/Dashboard'
 
 const App = () => {
   return(
@@ -25,6 +25,9 @@ const App = () => {
             </Route>
             <Route path="/register">
               <Register />
+            </Route>
+            <Route path="/dashboard">
+              <Dashboard />
             </Route>
           </Switch>
         </div>
