@@ -25,27 +25,29 @@ const chartTheme = {
 }
 
 const Dashboard = () => {
-    const [investmentData, updateInvestmentData] = useState([{name: "Desktops",
-    data: [10, 41, 35, 51, 49, 62, 69, 91, 148]}])
+    const [investmentData, updateInvestmentData] = useState([10, 41, 35, 51, 49, 62, 69, 91, 148])
 
     useEffect(() => {
-
+        setInterval(async () => {
+            await axios.post('https://api01.iq.questrade.com/v1/markets/quotes/options')
+        }, 30000) 
     })
     
 
     const updateChart = () => {
-        const newData = []
+        const newData = [20,30,40,50]
 
 
-        updateInvestmentData(newData)
+        updateInvestmentData(investmentData => [...investmentData, ...newData])
 
     }
 
     return (
         <>
+            <button onClick={updateChart}>test</button>
             <Chart
                 options={chartTheme}
-                series={investmentData}
+                series={[{name: "Desktops", data: investmentData}]}
                 type="line"
                 width="700"
             />

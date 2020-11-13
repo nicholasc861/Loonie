@@ -20,3 +20,9 @@ type LoginToken struct {
 	Email          string
 	StandardClaims jwt.StandardClaims
 }
+
+type Accounts struct {
+	AccountType   string
+	AccountNumber string
+	AccountStatus string
+}

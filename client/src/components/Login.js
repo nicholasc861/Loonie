@@ -61,6 +61,10 @@ const LoginButton = styled(Button)`
     }
 `
 
+const ErrorText = styled.div`
+    color: red;
+`
+
 const Login = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -68,7 +72,7 @@ const Login = () => {
 
     const tryLogin = async () => {
         try {
-            const data = await axios.post(`http://localhost:3000`, {
+            const data = await axios.post(`http://localhost:3000/login`, {
                 body: JSON.stringify ({
                     "email": email,
                     "password": password,
@@ -76,7 +80,6 @@ const Login = () => {
             })
             if (data.error){
                 setErrorText(data.error)
-                
             } else {
 
             }
@@ -90,6 +93,7 @@ const Login = () => {
         <LoginWrapper>
             <LoginForm>
                 <LoginHeader>Welcome to Questrack!</LoginHeader>
+                <ErrorText>{errorText}</ErrorText>
                 <FormGroup>
                     <FormLabel>Email or Username:</FormLabel>
                     <div>
