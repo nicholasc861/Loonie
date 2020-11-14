@@ -13,9 +13,16 @@ type User struct {
 	Password  string `json:"Password"`
 }
 
+// Login Token Type
 type LoginToken struct {
 	UserID         uint
 	Name           string
 	Email          string
 	StandardClaims jwt.StandardClaims
+}
+
+type Accounts struct {
+	AccountType   string
+	AccountNumber string
+	AccountStatus string
 }

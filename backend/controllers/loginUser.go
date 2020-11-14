@@ -75,3 +75,7 @@ func FindOne(email, password string) map[string]interface{} {
 	resp["user"] = user
 	return resp
 }
+
+func UpdateAccounts(res http.ResponseWriter, req *http.Request) {
+
+}
