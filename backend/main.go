@@ -2,15 +2,31 @@ package main
 
 import (
 	"log"
+	"net/http"
 
-	"github.com/joho/godotenv"
+	controllers "./controllers"
+	"github.com/rs/cors"
 )
 
 func main() {
-	err := godotenv.Load()
+	corsOpts := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+			http.MethodOptions,
+			http.MethodHead,
+		},
+		AllowedHeaders: []string{
+			"*",
+		},
+	})
 
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	router := controllers.NewRouter()
+
+	log.Fatal(http.ListenAndServe(":8080", corsOpts.Handler(router)))
 
 }

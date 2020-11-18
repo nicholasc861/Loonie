@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 
 import styled from 'styled-components'
+import axios from 'axios'
 import { Button, Form } from 'react-bootstrap'
 
 const RegisterHeader = styled.div`
@@ -67,6 +68,17 @@ const Register = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
+    const registerUser = async() => {
+        const data = await axios.post('http://localhost:3005/register', {
+            body: JSON.stringify ({
+                FirstName: firstName,
+                LastName: lastName,
+                Email: email,
+                Password: password,
+            })
+        })
+    }
+
     return (
         <RegisterWrapper>
             <RegisterForm>
@@ -102,7 +114,7 @@ const Register = () => {
                     </FormGroup>
                 </div>
                 <div class="row" style={{"align-items": "center"}}>
-                    <RegisterButton>Register!</RegisterButton>
+                    <RegisterButton onClick={registerUser}>Register!</RegisterButton>
                 </div>
             </RegisterForm>
         </RegisterWrapper>

@@ -1,36 +1,48 @@
 package controllers
 
-import "net/http"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	models "../models"
+	"github.com/dgrijalva/jwt-go"
+)
 
 func JwtVerify(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		var header = req.Header.Get("x-access-token")
-
-		header = strings.TrimSpace(header)
-
-		if header == "" {
-			res.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(res).Encode(Exception{
-				Message: "Missing auth token"
+		cookieToken, err := req.Cookie("access-token")
+		if err != nil {
+			json.NewEncoder(res).Encode(models.Exception{
+				ErrorCode: 404,
+				Message:   "Missing authentication token",
 			})
 			return
 		}
 
-		tk = &models.LoginToken{}
+		JWTToken := cookieToken.Value
 
-		_, err := jwt.ParseWithClaims(header, tk, funct(token *jwt.Token) (interface{}, err){
+		claims := &models.LoginToken{}
+
+		_, err = jwt.ParseWithClaims(JWTToken, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
 			return []byte("secret"), nil
 		})
 
+		fmt.Printf("%v", claims.Name)
+
 		if err != nil {
 			res.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(res).Encode(Exception{
-				Message: err.Error()
+			json.NewEncoder(res).Encode(models.Exception{
+				Message: err.Error(),
 			})
 			return
 		}
-		
-		ctx := context.WithValue(req.Context(), "user", tk)
+
+		ctx := context.WithValue(req.Context(), "user", claims)
 		next.ServeHTTP(res, req.WithContext(ctx))
 	})
 }
