@@ -9,12 +9,17 @@ import (
 	models "../models"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/jackc/pgconn"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateUser(res http.ResponseWriter, req *http.Request) {
 	user := &models.User{}
 	json.NewDecoder(req.Body).Decode(user)
+
+	if *user.Email == "" {
+		user.Email = nil
+	}
 
 	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -25,16 +30,35 @@ func CreateUser(res http.ResponseWriter, req *http.Request) {
 		json.NewEncoder(res).Encode(err)
 	}
 
-	user.UserID = 1
 	user.Password = string(pass)
 	createdUser := db.Create(user)
-	var errMessage = createdUser.Error
+	errMessage := createdUser.Error
 
-	if createdUser.Error != nil {
-		fmt.Println(errMessage)
+	if errMessage != nil {
+		if errMessage.(*pgconn.PgError).Code == "23505" {
+			resp := map[string]interface{}{
+				"status":  false,
+				"message": "Email already registered!",
+			}
+			json.NewEncoder(res).Encode(resp)
+			return
+		} else {
+			resp := map[string]interface{}{
+				"status":  false,
+				"message": "Error while registering user!",
+			}
+			json.NewEncoder(res).Encode(resp)
+			return
+
+		}
 	}
 
-	json.NewEncoder(res).Encode(createdUser)
+	resp := map[string]interface{}{
+		"status":  true,
+		"message": "User successfully created",
+	}
+
+	json.NewEncoder(res).Encode(resp)
 }
 
 func Login(res http.ResponseWriter, req *http.Request) {
@@ -49,7 +73,7 @@ func Login(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resp, JWTCookie := FindOne(user.Email, user.Password)
+	resp, JWTCookie := FindOne(*user.Email, user.Password)
 
 	http.SetCookie(res, JWTCookie)
 	json.NewEncoder(res).Encode(resp)
@@ -80,7 +104,7 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 	tk := &models.LoginToken{
 		UserID: user.UserID,
 		Name:   user.FirstName,
-		Email:  user.Email,
+		Email:  *user.Email,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiresAt.Unix(),
 			Issuer:    "Questrack",

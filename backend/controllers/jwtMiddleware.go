@@ -32,8 +32,6 @@ func JwtVerify(next http.Handler) http.Handler {
 			return []byte("secret"), nil
 		})
 
-		fmt.Printf("%v", claims.Name)
-
 		if err != nil {
 			res.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(res).Encode(models.Exception{
@@ -42,7 +40,7 @@ func JwtVerify(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(req.Context(), "user", claims)
+		ctx := context.WithValue(req.Context(), "user_id", claims.UserID)
 		next.ServeHTTP(res, req.WithContext(ctx))
 	})
 }

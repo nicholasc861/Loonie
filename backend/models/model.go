@@ -8,14 +8,15 @@ import (
 )
 
 type User struct {
-	UserID    uint   `gorm:"primaryKey"`
-	FirstName string `gorm:"varchar(100)"`
-	LastName  string `gorm:"varchar(100)"`
-	Email     string `gorm:"varchar(100);unique_index"`
-	Password  string `json:"Password"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	UserID       uint    `gorm:"primaryKey;autoIncrement"`
+	FirstName    string  `gorm:"varchar(100)" json:"firstname"`
+	LastName     string  `gorm:"varchar(100)" json:"lastname"`
+	Email        *string `gorm:"varchar(255);unique_index" json:"email"`
+	Password     string  `json:"password"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
+	RefreshToken string         `gorm:"varchar(255)" json:"refresh_token"`
 }
 
 // Login Token Type

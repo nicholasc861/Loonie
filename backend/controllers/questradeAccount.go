@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -11,19 +9,31 @@ import (
 )
 
 func AddRefreshToken(res http.ResponseWriter, req *http.Request) {
-	var test *map[string]interface{}
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		panic(err)
+	contextUserID := req.Context().Value("user_id")
+	currentUser := &models.User{
+		UserID: contextUserID.(uint),
 	}
 
-	err = json.Unmarshal(body, &test)
+	err := json.NewDecoder(req.Body).Decode(currentUser)
 	if err != nil {
-		panic(err)
+		var resp = map[string]interface{}{
+			"status":  false,
+			"message": "Invalid Request",
+		}
+		json.NewEncoder(res).Encode(resp)
+		return
 	}
-	new := *test
-	fmt.Println(new["AccountID"])
 
+	if err := db.Model(&currentUser).Table("users").Update("refresh_token", currentUser.RefreshToken).Error; err != nil {
+		var resp = map[string]interface{}{
+			"status":  false,
+			"message": "Error creating record in Database",
+		}
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	json.NewEncoder(res).Encode(currentUser)
 }
 
 func AddQuestradeAccount(res http.ResponseWriter, req *http.Request) {
