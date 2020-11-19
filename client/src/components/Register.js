@@ -67,16 +67,25 @@ const Register = () => {
     const [lastName, setLastName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [errorMessage, setErrorMessage] = useState('')
 
     const registerUser = async() => {
-        const data = await axios.post('http://localhost:3005/register', {
-            body: JSON.stringify ({
-                FirstName: firstName,
-                LastName: lastName,
-                Email: email,
-                Password: password,
-            })
-        })
+        try {
+            const data = await axios.post('http://localhost:8080/register', 
+                JSON.stringify ({
+                    firstname: firstName,
+                    lastname: lastName,
+                    email: email,
+                    password: password,
+                })
+            )
+
+            if (data.status === 401) {
+                setErrorMessage("Invalid email or password.")
+            }
+        } catch (err) {
+            console.log(err)
+        }
     }
 
     return (
@@ -87,13 +96,13 @@ const Register = () => {
                     <FormGroup>
                         <FormLabel>First Name</FormLabel>
                         <div>
-                            <RegisterInput style={{"margin-right": '10px'}}></RegisterInput>
+                            <RegisterInput onChange={(e) => setFirstName(e.target.value)} style={{"margin-right": '10px'}}></RegisterInput>
                         </div>
                     </FormGroup>
                     <FormGroup>
                         <FormLabel>Last Name</FormLabel>
                         <div>
-                            <RegisterInput></RegisterInput>
+                            <RegisterInput onChange={(e) => setLastName(e.target.value)}></RegisterInput>
                         </div>
                     </FormGroup>
                 </div>
@@ -101,7 +110,7 @@ const Register = () => {
                     <FormGroup>
                         <FormLabel>Email</FormLabel>
                         <div>
-                            <RegisterInput style={{width: '678px'}}></RegisterInput>
+                            <RegisterInput onChange={(e) => setEmail(e.target.value)} style={{width: '678px'}}></RegisterInput>
                         </div>
                     </FormGroup>
                 </div>
@@ -109,13 +118,16 @@ const Register = () => {
                     <FormGroup>
                     <FormLabel>Password (min 8. characters)</FormLabel>
                         <div>
-                            <RegisterInput type="password" style={{width: '678px'}}></RegisterInput>
+                            <RegisterInput type="password" onChange={(e) => setPassword(e.target.value)} style={{width: '678px'}}></RegisterInput>
                         </div>
                     </FormGroup>
                 </div>
                 <div class="row" style={{"align-items": "center"}}>
                     <RegisterButton onClick={registerUser}>Register!</RegisterButton>
                 </div>
+                {errorMessage &&
+                    <div>{errorMessage}</div>
+                }
             </RegisterForm>
         </RegisterWrapper>
     )

@@ -41,6 +41,7 @@ func CreateUser(res http.ResponseWriter, req *http.Request) {
 				"message": "Email already registered!",
 			}
 			json.NewEncoder(res).Encode(resp)
+			res.WriteHeader(401)
 			return
 		} else {
 			resp := map[string]interface{}{

@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	corsOpts := cors.New(cors.Options{
+	router := controllers.NewRouter()
+
+	handler := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:3000"},
 		AllowedMethods: []string{
 			http.MethodGet,
@@ -23,10 +25,8 @@ func main() {
 		AllowedHeaders: []string{
 			"*",
 		},
-	})
+	}).Handler(router)
 
-	router := controllers.NewRouter()
-
-	log.Fatal(http.ListenAndServe(":8080", corsOpts.Handler(router)))
+	log.Fatal(http.ListenAndServe(":8080", handler))
 
 }
