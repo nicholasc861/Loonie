@@ -131,5 +131,10 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 		HttpOnly: true,
 	}
 
+	// QuestradeAccessCookie := &http.Cookie{
+	// 	Name:  "questrade-access",
+	// 	Value: user.RefreshToken,
+	// }
+
 	return resp, JWTCookie
 }

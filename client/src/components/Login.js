@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
 import styled from 'styled-components'
 import { Container, Form, Button } from 'react-bootstrap'
+import { useHistory } from 'react-router-dom'
 
 import axios from "axios"
+import { AuthContext } from '../context/auth'
+
 
 const LoginHeader = styled.div`
     font-size: 25px;
@@ -69,19 +72,20 @@ const Login = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [errorText, setErrorText] = useState('')
+    const history = useHistory()
 
     const tryLogin = async () => {
         try {
-            const data = await axios.post(`http://localhost:3000/login`, {
-                body: JSON.stringify ({
+            const data = await axios.post(`http://localhost:8080/login`, 
+                JSON.stringify ({
                     "email": email,
                     "password": password,
-                })
-            })
+                }), {withCredentials: true}
+            )
             if (data.error){
                 setErrorText(data.error)
             } else {
-
+                history.push('/dashboard')
             }
         } catch (err) {
             setErrorText(err)
@@ -98,6 +102,7 @@ const Login = () => {
                     <FormLabel>Email or Username:</FormLabel>
                     <div>
                         <LoginInput
+                            required
                             type="email" 
                             id="email" 
                             onChange={(e) => setEmail(e.target.value)} 
@@ -108,6 +113,7 @@ const Login = () => {
                     <FormLabel>Password:</FormLabel>
                     <div>
                         <LoginInput
+                            required
                             type="password" 
                             id="password"
                             onChange={(e) => setPassword(e.target.value)} 
@@ -118,6 +124,10 @@ const Login = () => {
                     Sign In
                 </LoginButton>
             </LoginForm>
+            {
+                errorText &&
+                    <h3>{errorText}</h3>
+            }
         </LoginWrapper>
     )
 

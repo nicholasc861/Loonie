@@ -25,6 +25,7 @@ func main() {
 		AllowedHeaders: []string{
 			"*",
 		},
+		AllowCredentials: true,
 	}).Handler(router)
 
 	log.Fatal(http.ListenAndServe(":8080", handler))

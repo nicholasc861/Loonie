@@ -37,7 +37,7 @@ func ConnectDB() *gorm.DB {
 		panic(err)
 	}
 
-	fmt.Println("Successfully connected!", db)
+	fmt.Println("Successfully connected to database!")
 	return db
 
 }

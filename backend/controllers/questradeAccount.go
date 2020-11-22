@@ -36,7 +36,7 @@ func AddRefreshToken(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(currentUser)
 }
 
-func AddQuestradeAccount(res http.ResponseWriter, req *http.Request) {
+func AddAccount(res http.ResponseWriter, req *http.Request) {
 	account := &models.QuestradeAccount{}
 
 	err := json.NewDecoder(req.Body).Decode(account)
@@ -44,7 +44,7 @@ func AddQuestradeAccount(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		var resp = map[string]interface{}{
 			"status":  false,
-			"message": "Invalid Request",
+			"message": "Invalid Request Format",
 		}
 		log.Fatal(err)
 		json.NewEncoder(res).Encode(resp)
@@ -61,4 +61,47 @@ func AddQuestradeAccount(res http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(res).Encode(account)
+}
+
+func AddMultipleAccounts(res http.ResponseWriter, req *http.Request) {
+	accounts := []models.QuestradeAccount{}
+
+	err := json.NewDecoder(req.Body).Decode(&accounts)
+
+	if err != nil {
+		var resp = map[string]interface{}{
+			"status":  false,
+			"message": "Invalid Request Format",
+		}
+		log.Fatal(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	if err := db.Table("user_accounts").Create(accounts).Error; err != nil {
+		var resp = map[string]interface{}{
+			"status":  false,
+			"message": "Error creating record in Database",
+		}
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	json.NewEncoder(res).Encode(accounts)
+}
+
+func GetQuestradeAccounts(res http.ResponseWriter, req *http.Request) {
+	contextUserID := req.Context().Value("user_id")
+	accounts := []models.QuestradeAccount{}
+
+	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
+		var resp = map[string]interface{}{
+			"status":  false,
+			"message": "Error creating record in Database",
+		}
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	json.NewEncoder(res).Encode(accounts)
 }

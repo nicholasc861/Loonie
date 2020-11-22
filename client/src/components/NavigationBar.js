@@ -1,6 +1,7 @@
 import React from 'react'
 import { Nav, Navbar, } from 'react-bootstrap'
 import styled from 'styled-components'
+import { AuthContext } from '../context/auth'
 
 import Logo from '../assets/Logo.png'
 
@@ -58,38 +59,49 @@ const NavText = styled.span`
 const NavigationBar = () => {
     const user = false;
 
-
     return (
-        <Navigation>
-            <NavBrandWrapper>
-                <Navigation.Brand href="/">
-                    Questrack
-                    <LogoImg src={Logo} />
-                </Navigation.Brand>
-            </NavBrandWrapper>
-            <Navigation.Toggle aria-controls="responsive-navbar-nav" />
-            <Navbar.Collapse id="responsive-navbar-nav">
-                <NavLinks className="justify-content-end">
-                    {user ? (
-                    <>
-                    </>
-                    ) : (
-                    <>
-                        <Nav.Link href="/login">
-                            <NavText>
-                                Log In
-                            </NavText>
-                        </Nav.Link>
-                        <RegisterButton href="/register">
-                            <NavText>
-                                Sign Up
-                            </NavText>
-                        </RegisterButton>
-                    </>
-                    )}
-                </NavLinks>
-            </Navbar.Collapse>
-        </Navigation>
+        <AuthContext.Provider value={}>
+            <Navigation>
+                <NavBrandWrapper>
+                    <Navigation.Brand href="/">
+                        Questrack
+                        <LogoImg src={Logo} />
+                    </Navigation.Brand>
+                </NavBrandWrapper>
+                <Navigation.Toggle aria-controls="responsive-navbar-nav" />
+                <Navbar.Collapse id="responsive-navbar-nav">
+                    <NavLinks className="justify-content-end">
+                        {isLoggedIn ? (
+                        <>
+                            <Nav.Link href="/dashboard">
+                                <NavText>
+                                    Dashboard
+                                </NavText>
+                            </Nav.Link>
+                            <Nav.Link>
+                                <NavText>
+                                    Sign Out
+                                </NavText>
+                            </Nav.Link>
+                        </>
+                        ) : (
+                        <>
+                            <Nav.Link href="/login">
+                                <NavText>
+                                    Log In
+                                </NavText>
+                            </Nav.Link>
+                            <RegisterButton href="/register">
+                                <NavText>
+                                    Sign Up
+                                </NavText>
+                            </RegisterButton>
+                        </>
+                        )}
+                    </NavLinks>
+                </Navbar.Collapse>
+            </Navigation>
+        </AuthContext.Provider>
     )
 }
 

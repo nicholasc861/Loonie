@@ -10,8 +10,17 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+func commonMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(res, req)
+	})
+}
+
 func JwtVerify(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		fmt.Println(req.Cookies())
+		fmt.Println(req)
 		cookieToken, err := req.Cookie("access-token")
 		if err != nil {
 			json.NewEncoder(res).Encode(models.Exception{

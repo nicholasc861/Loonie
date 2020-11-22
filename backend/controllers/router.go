@@ -22,7 +22,11 @@ var db = utils.ConnectDB()
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	user := router.PathPrefix("/user").Subrouter()
+
+	// Middlewares to use
+	router.Use(commonMiddleware)
 	user.Use(JwtVerify)
+	user.Use(commonMiddleware)
 
 	for _, route := range routes {
 		if route.Protected {
@@ -64,7 +68,14 @@ var routes = Routes{
 		"POST",
 		"/account",
 		true,
-		AddQuestradeAccount,
+		AddAccount,
+	},
+	Route{
+		"Get Questrade Accounts",
+		"GET",
+		"/accounts",
+		true,
+		GetQuestradeAccounts,
 	},
 	Route{
 		"Add Questrade API Refresh Token",

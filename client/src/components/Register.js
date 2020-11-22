@@ -1,8 +1,11 @@
 import React, {useState} from 'react';
+import { useHistory } from 'react-router-dom'
 
 import styled from 'styled-components'
 import axios from 'axios'
 import { Button, Form } from 'react-bootstrap'
+
+const questradeClientID = process.env.questradeClientID
 
 const RegisterHeader = styled.div`
     font-size: 20px;
@@ -77,11 +80,13 @@ const Register = () => {
                     lastname: lastName,
                     email: email,
                     password: password,
-                })
+                }),  {withCredentials: true}
             )
 
-            if (data.status === 401) {
-                setErrorMessage("Invalid email or password.")
+            if (data.data.status === true) {
+                window.location = `https://login.questrade.com/oauth2/authorize?client_id=${process.env.REACT_APP_questradeClientID}&response_type=code&redirect_uri=https://localhost:3000/questrade-callback`
+            } else {
+                setErrorMessage(data.data.message)
             }
         } catch (err) {
             console.log(err)
