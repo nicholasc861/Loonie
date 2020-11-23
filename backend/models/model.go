@@ -44,6 +44,18 @@ type QuestradeAccount struct {
 	Status      bool   `gorm:"bool"`
 }
 
+type QuestradePosition struct {
+	PositionID        uint `gorm:"primaryKey"`
+	AccountID         uint
+	QuestradeID       uint
+	Symbol            string
+	OpenQuantity      uint
+	ClosedQuantity    uint
+	AverageEntryPrice float64
+	IsOption          bool
+	Status            bool
+}
+
 type Exception struct {
 	ErrorCode int
 	Message   string

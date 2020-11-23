@@ -58,6 +58,29 @@ const Dashboard = () => {
     
     const getCurrentPositions = async () => {
         try {
+            const currentAccount = selectedAccount
+            const questradePositions = await axios.get(`https://api01.iq.questrade.com/v1/markets/${currentAccount}/options`, {
+                headers: { Authorization: `Bearer ${process.env.QUESTRADE_API_ACCESS_TOKEN}` }
+            })
+
+            if (questradePositions){
+                const positions = questradePositions.data.positions
+
+                for (let i = 0; i < positions.length; i++) {
+                    const selectedPosition = positions[i]
+                    const addPosition = await axios.post(`http://localhost:8080/user/account/positions`, 
+                        JSON.stringify({
+                            AccountID: currentAccount,
+                            QuestradeID: selectedPosition.symbolId,
+                            Symbol: selectedPosition.symbol,
+                            OpenQuantity: selectedPosition.openQuantity,
+                            AverageEntryPrice: selectedPosition.averageEntryPrice,
+                            IsOption: /\d/.test(selectedPosition.symbol),
+                            status: true
+                        }), {withCredentials: true})
+                }
+            }
+
             const data = await axios.get(`http://localhost:8080/user/account/positions`, {withCredentials: true})
         } catch (err) {
             console.error(err)
@@ -105,7 +128,6 @@ const Dashboard = () => {
                                             return (<option key={id} value={account.AccountID}>{account.AccountType} - {account.AccountID}</option>)
                                         })}
                                 </Form.Control>
-
                             </Form.Group>
                         </Form>
                     </Col>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import styled from 'styled-components'
 import { Container, Form, Button } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
@@ -72,6 +72,7 @@ const Login = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [errorText, setErrorText] = useState('')
+    const context = useContext(AuthContext)
     const history = useHistory()
 
     const tryLogin = async () => {
@@ -85,10 +86,11 @@ const Login = () => {
             if (data.error){
                 setErrorText(data.error)
             } else {
+                context.login()
                 history.push('/dashboard')
             }
         } catch (err) {
-            setErrorText(err)
+            setErrorText(err.error)
             console.error(err)
         }
     }
