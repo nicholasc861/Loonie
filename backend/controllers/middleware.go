@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	models "../models"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/nicholasc861/questrack-backend/models"
 )
 
 func commonMiddleware(next http.Handler) http.Handler {
@@ -50,6 +50,7 @@ func JwtVerify(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(req.Context(), "user_id", claims.UserID)
+
 		next.ServeHTTP(res, req.WithContext(ctx))
 	})
 }

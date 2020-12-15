@@ -6,8 +6,7 @@ import { AuthContext } from '../context/auth'
 import Logo from '../assets/Logo.png'
 
 const Navigation = styled(Navbar)`
-    font-family: "Open Sans", sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     top: 0;
     left: 0;
     background-color: #2F2F2F;
@@ -25,8 +24,15 @@ const NavBrandWrapper = styled.div`
     .navbar-brand {
         color: #FFFCFF;
         font-size: 22px;
-    }
 
+        :hover {
+            color: #FFFCFF;
+        }
+    }
+`
+
+const Spacer = styled.div`
+    width: 20px;
 `
 
 const LogoImg = styled.img`
@@ -39,21 +45,24 @@ const LogoImg = styled.img`
 const NavLinks = styled(Nav)`
     width: 100%;
     font-weight: 400;
-    font-family: "Karla", sans-serif;
 `
 
 const RegisterButton = styled(Nav.Link)`
-    margin: 0px 5px;
+    heigth: 24px;
+    width: 122px;
+    align-items: center;
     border: 2px solid #4AAD52;
-    border-radius: 3em;
+    border-radius: 24px;
+    text-align: center;
+    display: inline;
     background: #4AAD52;
 `
 
 const NavText = styled.span`
     color: #FFFCFF;
-    font-weight: 600;
-    padding: 10px;
-    font-size: 17px;
+    line-height: 24px;
+    font-weight: 700;
+    font-size: 16px;
 `
 
 const NavigationBar = () => {
@@ -90,6 +99,7 @@ const NavigationBar = () => {
                                 Log In
                             </NavText>
                         </Nav.Link>
+                        <Spacer />
                         <RegisterButton href="/register">
                             <NavText>
                                 Sign Up

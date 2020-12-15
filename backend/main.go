@@ -3,16 +3,18 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
-	controllers "./controllers"
+	"github.com/nicholasc861/questrack-backend/controllers"
 	"github.com/rs/cors"
 )
 
 func main() {
+	port := os.Getenv("PORT")
 	router := controllers.NewRouter()
 
 	handler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedOrigins: []string{"https://questrack-frontend.herokuapp.com", "http://localhost:5000"},
 		AllowedMethods: []string{
 			http.MethodGet,
 			http.MethodPost,
@@ -28,6 +30,6 @@ func main() {
 		AllowCredentials: true,
 	}).Handler(router)
 
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 
 }

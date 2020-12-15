@@ -4,9 +4,11 @@
 /node_modules
 /.pnp
 .pnp.js
+Procfile
 
 # testing
 /coverage
+.env
 
 # production
 /build

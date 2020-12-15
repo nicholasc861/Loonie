@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	models "../models"
+	"github.com/nicholasc861/questrack-backend/models"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jackc/pgconn"
@@ -54,11 +54,16 @@ func CreateUser(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	_, JWTCookie := FindOne(*user.Email, user.Password)
+
+	http.SetCookie(res, JWTCookie)
+
 	resp := map[string]interface{}{
 		"status":  true,
 		"message": "User successfully created",
 	}
 
+	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(resp)
 }
 
@@ -91,8 +96,6 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 		return resp, nil
 	}
 
-	expiresAt := time.Now().Add(time.Minute * 720) // JWT is valid for 12 hours
-
 	errf := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if errf != nil && errf == bcrypt.ErrMismatchedHashAndPassword {
 		var resp = map[string]interface{}{
@@ -101,6 +104,8 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 		}
 		return resp, nil
 	}
+
+	expiresAt := time.Now().Add(time.Minute * 360) // JWT is valid for 12 hours
 
 	tk := &models.LoginToken{
 		UserID: user.UserID,
@@ -130,11 +135,6 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 		Expires:  expiresAt,
 		HttpOnly: true,
 	}
-
-	// QuestradeAccessCookie := &http.Cookie{
-	// 	Name:  "questrade-access",
-	// 	Value: user.RefreshToken,
-	// }
 
 	return resp, JWTCookie
 }

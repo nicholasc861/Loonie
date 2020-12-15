@@ -1,2 +1,4 @@
+/Logo
+.envLocal
 .env
-authorization.json
+Procfile

@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	utils "../utils"
 	"github.com/gorilla/mux"
+	"github.com/nicholasc861/questrack-backend/utils"
 )
 
 type Route struct {
@@ -64,13 +64,6 @@ var routes = Routes{
 	},
 	// User Routes /user/{}
 	Route{
-		"Add Questrade Account",
-		"POST",
-		"/account",
-		true,
-		AddAccount,
-	},
-	Route{
 		"Get Questrade Accounts",
 		"GET",
 		"/accounts",
@@ -83,5 +76,54 @@ var routes = Routes{
 		"/addtoken",
 		true,
 		AddRefreshToken,
+	},
+	Route{
+		"Get All Questrade Positions for All Accounts",
+		"GET",
+		"/positions",
+		true,
+		GetAllQuestradePositions,
+	},
+	Route{
+		"Get All Questrade Balances for All Accounts",
+		"GET",
+		"/balances",
+		true,
+		GetAllQuestradeBalances,
+	},
+	Route{
+		"Get Quote for a Position ID",
+		"GET",
+		"/hisquote/{positionID}",
+		true,
+		GetHistoricalQuote,
+	},
+	Route{
+		"Get Current Quote for a Position ID",
+		"GET",
+		"/quote/{positionID}",
+		true,
+		GetCurrentQuote,
+	},
+	Route{
+		"Get Live P&L for a Position ID",
+		"POST",
+		"/livepl",
+		true,
+		GetLivePL,
+	},
+	Route{
+		"Get Options Chain For Position ID",
+		"GET",
+		"/option/{questradeID}",
+		true,
+		GetOptionsChain,
+	},
+	Route{
+		"Get Query Results",
+		"GET",
+		"/query/{searchterm}",
+		true,
+		GetSearchResults,
 	},
 }

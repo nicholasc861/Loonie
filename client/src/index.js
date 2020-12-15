@@ -7,13 +7,14 @@ import {
   Link
 } from 'react-router-dom'
 
-import GlobalStyle from './components/globalStyles'
+import GlobalStyle from './components/GlobalStyles'
 import PrivateRoute from './PrivateRoute'
 import NavigationBar from './components/NavigationBar'
-import Login from './components/Login'
-import Register from './components/Register'
-import Dashboard from './components/Dashboard'
-import useSessionStorage from './utils/sessionStorageHook'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import AuthCallback from './components/Questrade'
+import useSessionStorage from './utils/SessionStorageHook'
 import { AuthContext } from './context/auth';
 
 const App = () => {
@@ -38,6 +39,9 @@ const App = () => {
             </Route>
             <Route path="/register">
               <Register />
+            </Route>
+            <Route path="/auth">
+              <AuthCallback />
             </Route>
             <PrivateRoute path="/dashboard" component={Dashboard} />
           </Switch>
