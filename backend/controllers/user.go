@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/nicholasc861/questrack-backend/models"
@@ -119,7 +120,7 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tk)
 
-	tokenString, err := token.SignedString([]byte("secret"))
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		fmt.Println(err)
 	}

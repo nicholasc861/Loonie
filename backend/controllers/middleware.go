@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nicholasc861/questrack-backend/models"
@@ -38,7 +39,7 @@ func JwtVerify(next http.Handler) http.Handler {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte("secret"), nil
+			return []byte(os.Getenv("JWT_SECRET")), nil
 		})
 
 		if err != nil {
