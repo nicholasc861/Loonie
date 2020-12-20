@@ -15,19 +15,22 @@ type QuestradePosition struct {
 	OpenQuantity      float32
 	ClosedQuantity    float32
 	AverageEntryPrice float32
+	ClosedPNL         float32
 	TotalEntry        float32
 	IsOption          bool
 	Status            bool
 }
 
 type QuestradeQuote struct {
-	ID             uint `gorm:"primaryKey;autoIncrement"`
-	QuestradeID    uint
-	Symbol         string
-	BidPrice       float32
-	LastTradePrice float32
-	TimeQuoted     int64
-	OpenPrice      float32
+	ID                uint `gorm:"primaryKey;autoIncrement"`
+	QuestradeID       uint
+	Description       string
+	Symbol            string
+	BidPrice          float32
+	LastTradePrice    float32
+	TimeQuoted        int64
+	OpenPrice         float32
+	PrevDayClosePrice float32
 }
 
 type QuestradeLivePL struct {

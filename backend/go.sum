@@ -132,6 +132,8 @@ github.com/nicholasc861/qapi v0.0.0-20201214015557-cdb8e3447565 h1:J4lRKaqRxOywQ
 github.com/nicholasc861/qapi v0.0.0-20201214015557-cdb8e3447565/go.mod h1:K8LQ4VOh+kj5R7WfWn5QwLeRiv24bg9GIl1CSJwns6s=
 github.com/nicholasc861/qapi v0.0.0-20201214020645-cf6b795dfe96 h1:nM6sIIE6jwum9oD0LvP6T4dslNYJushKEMkL0rUPKzs=
 github.com/nicholasc861/qapi v0.0.0-20201214020645-cf6b795dfe96/go.mod h1:K8LQ4VOh+kj5R7WfWn5QwLeRiv24bg9GIl1CSJwns6s=
+github.com/nicholasc861/qapi v0.0.0-20201217051139-48874952050f h1:FVdL0LIYW8cR+IiLmjO/xDpJEo5JsAkQt/m1FvBffaI=
+github.com/nicholasc861/qapi v0.0.0-20201217051139-48874952050f/go.mod h1:K8LQ4VOh+kj5R7WfWn5QwLeRiv24bg9GIl1CSJwns6s=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
@@ -182,6 +184,8 @@ golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392 h1:xYJJ3S178yv++9zXV/hnr2
 golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
 golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c h1:9HhBz5L/UjnK9XLtiZhYAdue5BVKep3PMmS2LuPDt8k=
 golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
+golang.org/x/crypto v0.0.0-20201217014255-9d1352758620 h1:3wPMTskHO3+O6jqTEXyFcsnuxMQOqYSaHsDxcbUXpqA=
+golang.org/x/crypto v0.0.0-20201217014255-9d1352758620/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
 golang.org/x/lint v0.0.0-20190930215403-16217165b5de/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
 golang.org/x/mod v0.0.0-20190513183733-4bf6d317e70e/go.mod h1:mXi4GBBbnImb6dmsKGUJ2LatrhH/nqhxcFungHvyanc=
 golang.org/x/net v0.0.0-20190311183353-d8887717615a/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=

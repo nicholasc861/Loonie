@@ -32,12 +32,3 @@ type Accounts struct {
 	AccountNumber string
 	AccountStatus string
 }
-
-type ErrorResponse struct {
-	Err string
-}
-
-type Exception struct {
-	ErrorCode int
-	Message   string
-}

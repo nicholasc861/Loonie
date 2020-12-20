@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// AddRefreshToken Update refresh token for user
 func AddRefreshToken(res http.ResponseWriter, req *http.Request) {
 	contextUserID := req.Context().Value("user_id")
 	currentUser := &models.User{
@@ -43,54 +44,47 @@ func AddRefreshToken(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(currentUser)
 }
 
-func UpdateRefreshToken(c *qapi.Client, currentUser models.User) error {
-	newRefreshToken := c.Credentials.RefreshToken
-
-	if err := db.Model(&currentUser).Table("users").Update("refresh_token", newRefreshToken).Error; err != nil {
-
-		return err
-	}
-	return nil
-}
-
+// GetQuestradeAccounts Retrieves all active accounts on Questrade
 func GetQuestradeAccounts(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	newAccounts := []models.QuestradeAccount{}
 	accounts := []models.QuestradeAccount{}
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
+	user, err := GetUserInfo(contextUserID)
+	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
+
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	client, err := GetQuestradeClient(user)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
 		}
+
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	err = UpdateRefreshToken(client, user)
-	if err != nil {
-		fmt.Println(err)
 		return
 	}
 
 	_, qAccounts, err := client.GetAccounts()
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error getting new accounts, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error getting new accounts, please contact support.",
 		}
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
@@ -108,77 +102,90 @@ func GetQuestradeAccounts(res http.ResponseWriter, req *http.Request) {
 
 		newAccounts = append(newAccounts, models.QuestradeAccount{
 			AccountID:   uint(accountNumber),
-			UserID:      contextUserID.(uint),
+			UserID:      contextUserID,
 			AccountType: account.Type,
 			Status:      accountStatus,
 		})
 	}
 
 	if err := db.Table("user_accounts").Clauses(clause.OnConflict{DoNothing: true}).Create(&newAccounts).Error; err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error creating record in Database",
-		}
-		fmt.Println(err)
-
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error creating record in Database",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error creating record in database.",
 		}
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	json.NewEncoder(res).Encode(accounts)
+	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID).Error; err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding records in the database.",
+		}
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved accounts.",
+		"data":       accounts,
+	}
+	json.NewEncoder(res).Encode(resp)
 }
 
+// GetAllQuestradePositions Retrieves all positions in all Questrade accounts
 func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	accounts := []models.QuestradeAccount{}
 	newPositions := []models.QuestradePosition{}
 	positions := []models.QuestradePosition{}
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		fmt.Println(err)
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		fmt.Println(err)
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	user, err := GetUserInfo(contextUserID)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
+
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	err = UpdateRefreshToken(client, user)
+	client, err := GetQuestradeClient(user)
 	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
+		}
+
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID).Error; err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding specified user in database",
+		}
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
@@ -190,7 +197,14 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 		if account.Status == true {
 			qPositions, err := client.GetPositions(fmt.Sprint(account.AccountID))
 			if err != nil {
+				res.WriteHeader(500)
+				var resp = map[string]interface{}{
+					"status":     500,
+					"statusText": "INTERNAL_SERVER_ERROR",
+					"message":    "Problem retrieving positions from Questrade",
+				}
 				fmt.Println(err)
+				json.NewEncoder(res).Encode(resp)
 				return
 			}
 
@@ -215,6 +229,7 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 					Symbol:            position.Symbol,
 					OpenQuantity:      position.OpenQuantity,
 					ClosedQuantity:    position.ClosedQuantity,
+					ClosedPNL:         position.ClosedPnL,
 					AverageEntryPrice: position.AverageEntryPrice,
 					TotalEntry:        position.TotalCost,
 					IsOption:          positionIsOption,
@@ -230,9 +245,11 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 		Columns:   []clause.Column{{Name: "account_id"}, {Name: "questrade_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"open_quantity", "closed_quantity", "average_entry_price", "total_entry", "status"}),
 	}).Create(&newPositions).Error; err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding record in the Database",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding record in the Database",
 		}
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
@@ -241,59 +258,83 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 
 	// Find all positions associated with the accounts passed in
 	if err := db.Table("user_positions").Find(&positions).Where("account_id in ?", accounts).Error; err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding record in the Database",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding record in the Database",
 		}
 		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
-	json.NewEncoder(res).Encode(positions)
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved accounts.",
+		"data":       positions,
+	}
+	json.NewEncoder(res).Encode(resp)
 }
-
-// func GetQuestradePositions(res http.ResponseWriter, req *http.Request) {
-
-// }
 
 // GetAllQuestradeBalances Gets Account Balances from Questrade
 func GetAllQuestradeBalances(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	accounts := []models.QuestradeAccount{}
 	balances := []qapi.AccountBalances{}
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	user, err := GetUserInfo(contextUserID)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
 
-	err = UpdateRefreshToken(client, user)
-	if err != nil {
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	client, err := GetQuestradeClient(user)
+	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID).Error; err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error creating entry in database",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID).Error; err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error creating entry in database",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
@@ -306,176 +347,265 @@ func GetAllQuestradeBalances(res http.ResponseWriter, req *http.Request) {
 
 			balances = append(balances, qBalance)
 		}
-
-		json.NewEncoder(res).Encode(balances)
 	}
+
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved historical quote for position",
+		"data":       balances,
+	}
+	json.NewEncoder(res).Encode(resp)
 }
 
-// GetAllQuestradeQuote Gets the Quote for the specified symbol (by QuestradeID)
+// GetHistoricalQuote Gets the Quote for the specified symbol (by QuestradeID)
 func GetHistoricalQuote(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	historicalQuotes := []models.QuestradeQuote{}
 	urlVars := mux.Vars(req)
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	user, err := GetUserInfo(contextUserID)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-	positionID, _ := strconv.ParseInt(urlVars["positionID"], 10, 64)
 
-	err = UpdateRefreshToken(client, user)
-	if err != nil {
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
+
+	client, err := GetQuestradeClient(user)
+	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	positionID, _ := strconv.ParseInt(urlVars["positionID"], 10, 64)
 
 	qQuote, err := client.GetQuote(int(positionID))
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding quote for specified position.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding quote with specified id",
 		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	quoteInfo, err := client.GetSymbols(int(positionID))
+	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding info for specified position.",
+		}
+
+		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	if err := db.Table("historical_quotes").Find(&historicalQuotes).Where("questrade_id = ?", positionID).Error; err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding quotes for specified position.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding quote with specified id",
 		}
+
+		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	quote := models.QuestradeQuote{
-		QuestradeID:    uint(positionID),
-		Symbol:         qQuote.Symbol,
-		BidPrice:       qQuote.BidPrice,
-		LastTradePrice: qQuote.LastTradePrice,
-		TimeQuoted:     time.Now().Unix(),
-		OpenPrice:      qQuote.OpenPrice,
+		QuestradeID:       uint(positionID),
+		Description:       quoteInfo[0].Description,
+		Symbol:            qQuote.Symbol,
+		BidPrice:          qQuote.BidPrice,
+		LastTradePrice:    qQuote.LastTradePrice,
+		TimeQuoted:        time.Now().Unix(),
+		OpenPrice:         qQuote.OpenPrice,
+		PrevDayClosePrice: quoteInfo[0].PrevDayClosePrice,
 	}
 
 	if err := db.Table("historical_quotes").Create(&quote).Error; err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error creating row in database.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error creating entry in database",
 		}
+
+		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	historicalQuotes = append(historicalQuotes, quote)
-
-	json.NewEncoder(res).Encode(quote)
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved historical quote for position",
+		"data":       historicalQuotes,
+	}
+	json.NewEncoder(res).Encode(resp)
 }
 
+// GetCurrentQuote Retrieves live quote for a specified position. Does not retrieve historical.
 func GetCurrentQuote(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	urlVars := mux.Vars(req)
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
+	user, err := GetUserInfo(contextUserID)
+	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
+
+		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	client, err := GetQuestradeClient(user)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
 		}
+
+		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	positionID, _ := strconv.ParseInt(urlVars["positionID"], 10, 64)
 
-	err = UpdateRefreshToken(client, user)
+	qQuote, err := client.GetQuote(int(positionID))
 	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding quote for specified position.",
+		}
+
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	qQuote, err := client.GetQuote(int(positionID))
+	quoteInfo, err := client.GetSymbols(int(positionID))
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding quote for specified position.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding info for specified position.",
 		}
+
+		fmt.Println(err)
 		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	quote := models.QuestradeQuote{
-		QuestradeID:    uint(positionID),
-		Symbol:         qQuote.Symbol,
-		BidPrice:       qQuote.BidPrice,
-		LastTradePrice: qQuote.LastTradePrice,
-		TimeQuoted:     time.Now().Unix(),
-		OpenPrice:      qQuote.OpenPrice,
+		QuestradeID:       uint(positionID),
+		Description:       quoteInfo[0].Description,
+		Symbol:            qQuote.Symbol,
+		BidPrice:          qQuote.BidPrice,
+		LastTradePrice:    qQuote.LastTradePrice,
+		TimeQuoted:        time.Now().Unix(),
+		OpenPrice:         qQuote.OpenPrice,
+		PrevDayClosePrice: quoteInfo[0].PrevDayClosePrice,
 	}
 
-	json.NewEncoder(res).Encode(quote)
+	if err := db.Table("historical_quotes").Create(&quote).Error; err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error creating entry in database",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved quote for position",
+		"data":       quote,
+	}
+	json.NewEncoder(res).Encode(resp)
 }
 
+// GetLivePL Retrieves Live Profit/Loss for all positions
 func GetLivePL(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
+	contextUserID := req.Context().Value("user_id").(uint)
 	positions := []models.QuestradePosition{}
-	user := models.User{}
-	resp := make([]map[string]interface{}, 0)
+	allLivePL := make([]map[string]interface{}, 0)
 
 	reqStruct := struct {
 		Positions []models.QuestradePosition `json:"positions"`
 	}{}
 
 	json.NewDecoder(req.Body).Decode(&reqStruct)
-
 	positions = reqStruct.Positions
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	user, err := GetUserInfo(contextUserID)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
 
-	err = UpdateRefreshToken(client, user)
-	if err != nil {
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	client, err := GetQuestradeClient(user)
+	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
@@ -483,17 +613,23 @@ func GetLivePL(res http.ResponseWriter, req *http.Request) {
 		qQuote, err := client.GetQuote(int(position.QuestradeID))
 		fmt.Println(qQuote)
 		if err != nil {
+			res.WriteHeader(500)
 			var resp = map[string]interface{}{
-				"status":  false,
-				"message": "Error finding quote for specified position.",
+				"status":     500,
+				"statusText": "INTERNAL_SERVER_ERROR",
+				"message":    "Error retrieving quote for specified position.",
 			}
+
+			fmt.Println(err)
 			json.NewEncoder(res).Encode(resp)
 			return
 		}
+
 		var multiplierOption float32 = 1
 		if position.IsOption {
 			multiplierOption = 100
 		}
+
 		PL := (qQuote.BidPrice * position.OpenQuantity * multiplierOption) - (position.AverageEntryPrice * position.OpenQuantity * multiplierOption)
 		roundedPL := math.Round(float64(PL)*100) / 100
 		isNegative := math.Signbit(roundedPL)
@@ -504,94 +640,164 @@ func GetLivePL(res http.ResponseWriter, req *http.Request) {
 			"P_L":        roundedPL,
 		}
 
-		resp = append(resp, newResp)
+		allLivePL = append(allLivePL, newResp)
 
 	}
-	fmt.Println(resp)
+
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved Live PL for positions",
+		"data":       allLivePL,
+	}
 	json.NewEncoder(res).Encode(resp)
 }
 
+// GetSearchResults Retrieves matching symbols for query
 func GetSearchResults(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	urlVars := mux.Vars(req)
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	user, err := GetUserInfo(contextUserID)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
 
-	err = UpdateRefreshToken(client, user)
-	if err != nil {
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	client, err := GetQuestradeClient(user)
+	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	results, err := client.SearchSymbols(urlVars["searchterm"], 0)
 	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding matches for query.",
+		}
+
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	json.NewEncoder(res).Encode(results)
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved Live PL for positions",
+		"data":       results,
+	}
+	json.NewEncoder(res).Encode(resp)
 }
 
+// GetOptionsChain Retrieves Option Chain if it exists for a position
 func GetOptionsChain(res http.ResponseWriter, req *http.Request) {
-	contextUserID := req.Context().Value("user_id")
-	user := models.User{}
+	contextUserID := req.Context().Value("user_id").(uint)
 	urlVars := mux.Vars(req)
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID.(uint)).Error; err != nil {
-		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error finding specified user in database",
-		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
-
-	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	user, err := GetUserInfo(contextUserID)
 	if err != nil {
+		res.WriteHeader(500)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Error using refresh token, please contact support.",
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem finding user",
 		}
-		json.NewEncoder(res).Encode(resp)
-		return
-	}
 
-	err = UpdateRefreshToken(client, user)
-	if err != nil {
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	client, err := GetQuestradeClient(user)
+	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Problem retrieving Questrade Client. Invalid Refresh Token or Problem Updating Refresh Token.",
+		}
+
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	questradeID, err := strconv.ParseInt(urlVars["questradeID"], 10, 64)
 	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     400,
+			"statusText": "INVALID_REQUEST_ERROR",
+			"message":    "Error converting questrade ID.",
+		}
+
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
 	results, err := client.GetOptionChain(int(questradeID))
-	fmt.Println(results)
 	if err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error retrieving options chain from Questrade.",
+		}
+
 		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
 		return
 	}
 
-	json.NewEncoder(res).Encode(results)
+	res.WriteHeader(200)
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully retrieved Live PL for positions",
+		"data":       results,
+	}
+	json.NewEncoder(res).Encode(resp)
+}
+
+func PositionInformation(res http.ResponseWriter, req *http.Request) {
+
+}
+
+// GetQuestradeClient Client for API Requests and Updating Refresh Token
+// Retrieves client to make API request to Questrade and Updates Refresh Token in Database
+func GetQuestradeClient(user *models.User) (*qapi.Client, error) {
+	client, err := qapi.NewClient(user.RefreshToken, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	newRefreshToken := client.Credentials.RefreshToken
+	if err := db.Model(&user).Table("users").Update("refresh_token", newRefreshToken).Error; err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }

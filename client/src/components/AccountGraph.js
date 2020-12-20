@@ -48,6 +48,10 @@ const Option = styled.span`
     font-weight: 500;
 `
 
+const SymbolDesc = styled.div`
+    font-size: 10px;
+`
+
 const CustomTooltip = (series, seriesIndex, dataPointIndex, w) => {
     return (
         <div>
@@ -57,6 +61,8 @@ const CustomTooltip = (series, seriesIndex, dataPointIndex, w) => {
 }
 
 const AccountGraph = ({quoteInfo, investmentData}) => {
+    const [timespan, changeTimespan] = useState(0)
+
     const chartTheme = {
         chart: {
             toolbar: {
@@ -64,7 +70,10 @@ const AccountGraph = ({quoteInfo, investmentData}) => {
             },
             background: '#373F47',
         },
-        colors: quoteInfo && quoteInfo.BidPrice >= quoteInfo.OpenPrice ? ['#08A045'] : ['#B22222'],
+        zoom: {
+            enabled: true,
+        },
+        colors: quoteInfo && quoteInfo.BidPrice >= quoteInfo.PrevDayClosePrice ? ['#08A045'] : ['#B22222'],
         grid: {
             show: false,
         },
@@ -79,7 +88,7 @@ const AccountGraph = ({quoteInfo, investmentData}) => {
             }
         },
         tooltip: {
-            enabled: true,
+            enabled: false,
             x: {
                 format: 'dd MMM HH:mm',
             },
@@ -95,7 +104,7 @@ const AccountGraph = ({quoteInfo, investmentData}) => {
                 datetimeUTC: false,
             },
             type: 'datetime',
-            min: moment((moment().format('LL') + ' 09:30')).unix()*1000,
+            min: timespan > 0 ? moment(moment().subtract(timespan, 'days').format('LL') + ' 9:30').unix() * 1000 : moment((moment().format('LL') + ' 09:30')).unix()*1000,
             max: moment((moment().format('LL') + ' 16:00')).unix()*1000,
         },
         yaxis: {
@@ -108,14 +117,14 @@ const AccountGraph = ({quoteInfo, investmentData}) => {
             labels: {
                 show: false,
             },
-            min: quoteInfo ? parseInt(quoteInfo.OpenPrice) - parseInt(quoteInfo.OpenPrice)*0.005: null,
-            max: quoteInfo ? parseInt(quoteInfo.OpenPrice) + parseInt(quoteInfo.OpenPrice)*0.005: null,
+            min: quoteInfo ? parseInt(quoteInfo.OpenPrice) - parseInt(quoteInfo.OpenPrice)*0.05: null,
+            max: quoteInfo ? parseInt(quoteInfo.OpenPrice) + parseInt(quoteInfo.OpenPrice)*0.05: null,
         },
     }
 
     const computeChange = {
-        change: quoteInfo && (quoteInfo.BidPrice - quoteInfo.OpenPrice).toFixed(2),
-        percent: quoteInfo && ((Math.abs(quoteInfo.BidPrice - quoteInfo.OpenPrice) / quoteInfo.OpenPrice)*100).toFixed(2),
+        change: quoteInfo && (quoteInfo.BidPrice - quoteInfo.PrevDayClosePrice).toFixed(2),
+        percent: quoteInfo && ((Math.abs(quoteInfo.BidPrice - quoteInfo.PrevDayClosePrice) / quoteInfo.PrevDayClosePrice)*100).toFixed(2),
     }
 
     const PositionIsOption = quoteInfo && /[0-9]/g.test(quoteInfo.Symbol);
@@ -135,10 +144,10 @@ const AccountGraph = ({quoteInfo, investmentData}) => {
                                 {quoteInfo.Symbol}
                               </Symbol>
                             }
-                        
+                        <SymbolDesc>{quoteInfo.Description}</SymbolDesc>
                         <BidPrice>${quoteInfo.BidPrice.toFixed(2)}</BidPrice>
-                        <ChangeInPrice isNegative={quoteInfo.BidPrice < quoteInfo.OpenPrice}>
-                            {computeChange.change && computeChange.change >= 0 
+                        <ChangeInPrice isNegative={quoteInfo.BidPrice < quoteInfo.PrevDayClosePrice}>
+                            {computeChange.change && quoteInfo.BidPrice >= quoteInfo.PrevDayClosePrice
                             ?   <span>↗ </span>
                             :   <span>↘ </span>
                             }
@@ -154,12 +163,12 @@ const AccountGraph = ({quoteInfo, investmentData}) => {
                 type="line"
                 width="700"
             />
-            {/* <TimeframeWrapper>
-                <TimeframeButton onClick={() => {console.log("worked")}}>1D</TimeframeButton>
-                <TimeframeButton onClick={() => {console.log("worked")}}>1W</TimeframeButton>
-                <TimeframeButton onClick={() => {console.log("worked")}}>1M</TimeframeButton>
-                <TimeframeButton onClick={() => {console.log("worked")}}>1Y</TimeframeButton>
-            </TimeframeWrapper> */}
+            <TimeframeWrapper>
+                <TimeframeButton onClick={() => changeTimespan()}>1D</TimeframeButton>
+                <TimeframeButton onClick={() => changeTimespan(2)}>2D</TimeframeButton>
+                <TimeframeButton onClick={() => changeTimespan(7)}>1W</TimeframeButton>
+                <TimeframeButton onClick={() => changeTimespan(30)}>1M</TimeframeButton>
+            </TimeframeWrapper> 
         </>
     )
 

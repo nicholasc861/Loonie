@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nicholasc861/questrack-backend/models"
@@ -24,29 +23,38 @@ func JwtVerify(next http.Handler) http.Handler {
 		fmt.Println(req)
 		cookieToken, err := req.Cookie("access-token")
 		if err != nil {
-			json.NewEncoder(res).Encode(models.Exception{
-				ErrorCode: 404,
-				Message:   "Missing authentication token",
-			})
+			res.WriteHeader(403)
+			var resp = map[string]interface{}{
+				"status":     403,
+				"statusText": "INVALID_CREDENTIALS",
+				"message":    "Please login before accessing this page",
+			}
+
+			fmt.Println(err)
+			json.NewEncoder(res).Encode(resp)
 			return
 		}
 
 		JWTToken := cookieToken.Value
-
 		claims := &models.LoginToken{}
 
 		_, err = jwt.ParseWithClaims(JWTToken, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte(os.Getenv("JWT_SECRET")), nil
+			return []byte("secret"), nil
 		})
 
 		if err != nil {
-			res.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(res).Encode(models.Exception{
-				Message: err.Error(),
-			})
+			res.WriteHeader(403)
+			var resp = map[string]interface{}{
+				"status":     403,
+				"statusText": "INVALID_CREDENTIALS",
+				"message":    "Please login before making requests",
+			}
+
+			fmt.Println(err)
+			json.NewEncoder(res).Encode(resp)
 			return
 		}
 

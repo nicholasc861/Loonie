@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/nicholasc861/questrack-backend/models"
@@ -24,11 +23,15 @@ func CreateUser(res http.ResponseWriter, req *http.Request) {
 
 	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		fmt.Println(err)
-		err := models.ErrorResponse{
-			Err: "Password Encryption failed.",
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error with password.",
 		}
-		json.NewEncoder(res).Encode(err)
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
 	}
 
 	user.Password = string(pass)
@@ -37,33 +40,36 @@ func CreateUser(res http.ResponseWriter, req *http.Request) {
 
 	if errMessage != nil {
 		if errMessage.(*pgconn.PgError).Code == "23505" {
-			resp := map[string]interface{}{
-				"status":  false,
-				"message": "Email already registered!",
-			}
-			json.NewEncoder(res).Encode(resp)
 			res.WriteHeader(401)
-			return
-		} else {
 			resp := map[string]interface{}{
-				"status":  false,
-				"message": "Error while registering user!",
+				"status":     401,
+				"statusText": "INVALID_REQUEST_ERROR",
+				"message":    "Email already registered!",
 			}
 			json.NewEncoder(res).Encode(resp)
-			return
-
+		} else {
+			res.WriteHeader(400)
+			var resp = map[string]interface{}{
+				"status":     400,
+				"statusText": "INVALID_REQUEST_ERROR",
+				"message":    "Error creating user",
+			}
+			json.NewEncoder(res).Encode(resp)
 		}
+		return
 	}
 
 	_, JWTCookie := FindOne(*user.Email, user.Password)
 
 	http.SetCookie(res, JWTCookie)
 
-	resp := map[string]interface{}{
-		"status":  true,
-		"message": "User successfully created",
+	var resp = map[string]interface{}{
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Successfully created user!",
 	}
 
+	res.WriteHeader(200)
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(resp)
 }
@@ -72,9 +78,11 @@ func Login(res http.ResponseWriter, req *http.Request) {
 	user := &models.User{}
 	err := json.NewDecoder(req.Body).Decode(user)
 	if err != nil {
+		res.WriteHeader(400)
 		var resp = map[string]interface{}{
-			"status":  false,
-			"message": "Invalid Request",
+			"status":     400,
+			"statusText": "INVALID_REQUEST_ERROR",
+			"message":    "Invalid Request Format",
 		}
 		json.NewEncoder(res).Encode(resp)
 		return
@@ -83,6 +91,7 @@ func Login(res http.ResponseWriter, req *http.Request) {
 	resp, JWTCookie := FindOne(*user.Email, user.Password)
 
 	http.SetCookie(res, JWTCookie)
+	res.WriteHeader(200)
 	json.NewEncoder(res).Encode(resp)
 }
 
@@ -120,14 +129,15 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tk)
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	tokenString, err := token.SignedString([]byte("secret"))
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	var resp = map[string]interface{}{
-		"status":  true,
-		"message": "Logged in successfully",
+		"status":     200,
+		"statusText": "ok",
+		"message":    "Logged in successfully",
 	}
 
 	JWTCookie := &http.Cookie{
@@ -138,4 +148,14 @@ func FindOne(email, password string) (map[string]interface{}, *http.Cookie) {
 	}
 
 	return resp, JWTCookie
+}
+
+func GetUserInfo(UserID uint) (*models.User, error) {
+	user := models.User{}
+
+	if err := db.Table("users").Find(&user).Where("user_id = ?", UserID).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

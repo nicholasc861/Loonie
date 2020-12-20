@@ -35,7 +35,7 @@ const Dashboard = () => {
     const [investmentData, updateInvestmentData] = useState([])
     const [quoteInfo, updateQuoteInfo] = useState()
     const [selectedPositions, updateSelectedPositions] = useState([])
-    const [selectedAccount, setSelectedAccount] = useState()
+    const [selectedAccount, setSelectedAccount] = useState(0)
 
     const [selectedPositionForQuote, updatePositionForQuote] = useState()
     const [selectedPositionForQuery, updatePositionForQuery] = useState()
@@ -81,7 +81,7 @@ const Dashboard = () => {
             getOptionsChain(selectedPositionForQuote)
         } else if (selectedPositionForQuote){
             updateInvestmentData([])
-            getQuoteForChart(selectedPositionForQuote)
+            getHistoricalForChart(selectedPositionForQuote)
             const interval = setInterval(() => getQuoteForChart(selectedPositionForQuote), 30000)
             return () => clearInterval(interval)
         }
@@ -91,7 +91,7 @@ const Dashboard = () => {
     useEffect(() => {
         if (selectedOptionForQuote){
             updateInvestmentData([])
-            getQuoteForChart(selectedOptionForQuote)
+            getHistoricalForChart(selectedOptionForQuote)
             const interval = setInterval(() => getQuoteForChart(selectedOptionForQuote), 30000)
             return () => clearInterval(interval)
         }
@@ -112,10 +112,10 @@ const Dashboard = () => {
         try {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/accounts`, {withCredentials: true})
             if (res){
-                for (let i = 0; i < res.data.length; i ++){
-                    updateAccountNumbers((accountNumbers) => [...accountNumbers, res.data[i]])
+                for (let i = 0; i < res.data.data.length; i ++){
+                    updateAccountNumbers((accountNumbers) => [...accountNumbers, res.data.data[i]])
                 }
-                setSelectedAccount(res.data[0].AccountID)
+                setSelectedAccount(res.data.data[0].AccountID)
             }
         } catch (err){
             console.error(err)
@@ -125,8 +125,8 @@ const Dashboard = () => {
     const getCurrentPositions = async () => {
         try {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/positions`, {withCredentials: true})
-            if (res.data) {
-                updateCurrentPositions(res.data)
+            if (res.data.data) {
+                updateCurrentPositions(res.data.data)
             }    
         } catch (err) {
             console.error(err)
@@ -139,7 +139,7 @@ const Dashboard = () => {
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/user/livepl`, JSON.stringify({
                 positions: filteredPositions
             }), {withCredentials: true})
-            updateLivePL(res.data)
+            updateLivePL(res.data.data)
         } catch (err){
             console.error(err)
         }
@@ -148,8 +148,8 @@ const Dashboard = () => {
     const getSearch = async (query) => {
         try {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/query/${query}`, {withCredentials: true})
-            if (res.data) {
-                updateSearchResults(res.data.slice(0,5))
+            if (res.data.data) {
+                updateSearchResults(res.data.data.slice(0,5))
             }
         } catch (err) {
             console.error(err)
@@ -159,9 +159,21 @@ const Dashboard = () => {
     const getQuoteForChart = async (selectedPosition) => {
         try {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/quote/${selectedPosition}`, {withCredentials: true});
-            if (res.data) {
-                updateQuoteInfo(res.data)
-                updateInvestmentData((currentData) => [...currentData, [res.data.TimeQuoted *1000, res.data.BidPrice]]);
+            if (res.data.data) {
+                updateQuoteInfo(res.data.data)
+                updateInvestmentData((currentData) => [...currentData, [res.data.data.TimeQuoted *1000, res.data.data.BidPrice]]);
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const getHistoricalForChart = async (selectedPosition) => {
+        try {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/hisquote/${selectedPosition}`, {withCredentials: true})
+            if (res.data.data) {
+                updateQuoteInfo(res.data.data[0])
+                updateInvestmentData(res.data.data.map(({TimeQuoted, BidPrice}) => [TimeQuoted * 1000, BidPrice]));
             }
         } catch (err) {
             console.error(err)
@@ -171,8 +183,8 @@ const Dashboard = () => {
     const getOptionsChain = async (questradeID) => {
         try {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/option/${questradeID}`, {withCredentials: true});
-            if (res.data) {
-                updateOptionsChain(res.data)
+            if (res.data.data) {
+                updateOptionsChain(res.data.data)
             }
         } catch (err) {
             console.error(err)

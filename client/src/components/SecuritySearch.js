@@ -100,6 +100,7 @@ const QuantitySelector = styled.input`
 const GraphButton = styled(Button)`
     background-color: #4AAD52;
     border-color: #4AAD52;
+    margin: 10px 0px;
 
     &:hover {
         background-color: #4AAD52;
@@ -126,8 +127,9 @@ const SecuritySearch = ({searchResults, checked, onChange, onOptionChoose, onBut
     const [quantity, setQuantity] = useState(1);
     const [searchFocused, setSearchFocused] = useState(false);
     const [optionType, setOptionType] = useState('Call');
-    const [optionSelected, setOptionSelected] = useState();
-    const [strikePrice, setStrikePrice] = useState();
+
+    const [optionSelected, setOptionSelected] = useState(0);
+    const [strikePrice, setStrikePrice] = useState(0);
 
     const setGraph = () => {
         if (checked === 'option'){
@@ -142,31 +144,30 @@ const SecuritySearch = ({searchResults, checked, onChange, onOptionChoose, onBut
         }
     }
 
-    useEffect(() => { 
-        if (optionChain.length > 0){
-            setOptionSelected(0)
-        }
-        if (optionSelected !== undefined){
-            setStrikePrice(0)
-        }
+    useEffect(() => {
+
+        console.log(optionSelected, strikePrice)
+
     }, [optionChain, optionSelected, strikePrice])
     
+
+
     return (
         <>  
             <Row>
                 <SearchWrapper>
                     <InputWrapper>
                         <PositionSearch value={selected && selected} onBlur={() => setSearchFocused(false)} onFocus={() => setSearchFocused(true)} onChange={(e) => {onChange(e.target.value); setSelected()}}/>
-                        <AssetSelector checked={checked === 'stock'} onClick={() => onButton('stock')}>STK</AssetSelector>
-                        <AssetSelector checked={checked === 'option'} onClick={() => onButton('option')}>OPT</AssetSelector>
+                        <AssetSelector checked={checked === 'stock'} onClick={() => {onButton('stock')}}>STK</AssetSelector>
+                        <AssetSelector checked={checked === 'option'} onClick={() => {onButton('option')}}>OPT</AssetSelector>
 
                         {searchFocused && !selected && searchResults && searchResults.length > 0 
                         && <SearchResultWrapper>
                             {
                                 searchResults.map((result, index) => {
                                     return(
-                                        <ResultWrapper>
-                                            <SearchResult key={index} onMouseDown={() => {onChoosePosition(result.symbolId); setSelected(result.symbol)}}>
+                                        <ResultWrapper key={index}>
+                                            <SearchResult onMouseDown={() => {onChoosePosition(result.symbolId); setSelected(result.symbol)}}>
                                                 <PositionSymbol>{result.symbol} {result.listingExchange ? '(' + result.listingExchange + ')' : ''}</PositionSymbol>
                                                 <PositionDescription>
                                                     {result.description.length > 50 
@@ -191,19 +192,18 @@ const SecuritySearch = ({searchResults, checked, onChange, onOptionChoose, onBut
                         <QuantityComponent disabled={!selected} quantity={quantity} setQuantity={setQuantity} />
                         <OptionDropdown>
                             <OptionDropdown.Label>Option Type:</OptionDropdown.Label>
-                            <OptionDropdown.Control as="select" custom disabled={!selected} onChange={(e) => {setOptionType(e.target.value)}}> 
+                            <OptionDropdown.Control as="select" custom disabled={!selected} onChange={(e) => setOptionType(e.target.value)}> 
                                 <option value="Call">Call</option>
                                 <option value="Put">Put</option>
                             </OptionDropdown.Control>
                         </OptionDropdown>
                         <OptionDropdown>
                             <OptionDropdown.Label>Expiry Date:</OptionDropdown.Label>
-                            <OptionDropdown.Control as="select" custom disabled={!selected} onChange={(e) => {setOptionSelected(e.target.value);}}> 
+                            <OptionDropdown.Control as="select" custom disabled={!selected} onChange={(e) => setOptionSelected(parseInt(e.target.value))}> 
                                 {optionChain.length >0 &&
-                                    optionChain.map((option, index) => {
-                                        const formatDate = moment(option.expiryDate).format('YYYY-MM-DD');
+                                    optionChain.map((optionC, index) => {
                                         return (
-                                            <option value={index}>{formatDate}</option>
+                                            <option value={index}>{ moment(optionC.expiryDate).format('YYYY-MM-DD')}</option>
                                         )
                                     })
                                 }
@@ -229,6 +229,7 @@ const SecuritySearch = ({searchResults, checked, onChange, onOptionChoose, onBut
                 (
                     <PositionOptionsWrapper>
                         <QuantityComponent disabled={!selected} quantity={quantity} setQuantity={setQuantity} />
+                        <GraphButton onClick={() => {setGraph()}}>Graph Option!</GraphButton>
                     </PositionOptionsWrapper>
                 )
                 }
