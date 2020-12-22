@@ -120,7 +120,7 @@ func GetQuestradeAccounts(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID).Error; err != nil {
+	if err := db.Table("user_accounts").Where("user_id = ?", contextUserID).Find(&accounts).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
@@ -177,7 +177,7 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID).Error; err != nil {
+	if err := db.Table("user_accounts").Where("user_id = ?", contextUserID).Find(&accounts).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
@@ -257,7 +257,7 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// Find all positions associated with the accounts passed in
-	if err := db.Table("user_positions").Find(&positions).Where("account_id in ?", accounts).Error; err != nil {
+	if err := db.Table("user_positions").Where("account_id in ?", accounts).Find(&positions).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
@@ -312,7 +312,7 @@ func GetAllQuestradeBalances(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := db.Table("users").Find(&user).Where("user_id = ?", contextUserID).Error; err != nil {
+	if err := db.Table("users").Where("user_id = ?", contextUserID).Find(&user).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
@@ -325,7 +325,7 @@ func GetAllQuestradeBalances(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := db.Table("user_accounts").Find(&accounts).Where("user_id = ?", contextUserID).Error; err != nil {
+	if err := db.Table("user_accounts").Where("user_id = ?", contextUserID).Find(&accounts).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
@@ -423,7 +423,7 @@ func GetHistoricalQuote(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := db.Table("historical_quotes").Find(&historicalQuotes).Where("questrade_id = ?", positionID).Error; err != nil {
+	if err := db.Table("historical_quotes").Where("questrade_id = ?", positionID).Find(&historicalQuotes).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
