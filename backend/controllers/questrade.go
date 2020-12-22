@@ -147,6 +147,7 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 	contextUserID := req.Context().Value("user_id").(uint)
 	accounts := []models.QuestradeAccount{}
 	newPositions := []models.QuestradePosition{}
+	closedPositions := []models.QuestradePosition{}
 	positions := []models.QuestradePosition{}
 
 	user, err := GetUserInfo(contextUserID)
@@ -223,20 +224,34 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 					positionIsOption = false
 				}
 
-				newPositions = append(newPositions, models.QuestradePosition{
-					AccountID:         account.AccountID,
-					QuestradeID:       uint(position.SymbolID),
-					Symbol:            position.Symbol,
-					OpenQuantity:      position.OpenQuantity,
-					ClosedQuantity:    position.ClosedQuantity,
-					ClosedPNL:         position.ClosedPnL,
-					AverageEntryPrice: position.AverageEntryPrice,
-					TotalEntry:        position.TotalCost,
-					IsOption:          positionIsOption,
-					Status:            positionStatus,
-				})
+				if position.AverageEntryPrice != 0 {
+					newPositions = append(newPositions, models.QuestradePosition{
+						AccountID:         account.AccountID,
+						QuestradeID:       uint(position.SymbolID),
+						Symbol:            position.Symbol,
+						OpenQuantity:      position.OpenQuantity,
+						ClosedQuantity:    position.ClosedQuantity,
+						ClosedPNL:         position.ClosedPnL,
+						AverageEntryPrice: position.AverageEntryPrice,
+						TotalEntry:        position.TotalCost,
+						IsOption:          positionIsOption,
+						Status:            positionStatus,
+					})
+				} else {
+					closedPositions = append(closedPositions, models.QuestradePosition{
+						AccountID:         account.AccountID,
+						QuestradeID:       uint(position.SymbolID),
+						Symbol:            position.Symbol,
+						OpenQuantity:      position.OpenQuantity,
+						ClosedQuantity:    position.ClosedQuantity,
+						ClosedPNL:         position.ClosedPnL,
+						AverageEntryPrice: position.AverageEntryPrice,
+						TotalEntry:        position.TotalCost,
+						IsOption:          positionIsOption,
+						Status:            positionStatus,
+					})
+				}
 			}
-
 		}
 	}
 
@@ -245,6 +260,22 @@ func GetAllQuestradePositions(res http.ResponseWriter, req *http.Request) {
 		Columns:   []clause.Column{{Name: "account_id"}, {Name: "questrade_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"open_quantity", "closed_quantity", "average_entry_price", "total_entry", "status"}),
 	}).Create(&newPositions).Error; err != nil {
+		res.WriteHeader(500)
+		var resp = map[string]interface{}{
+			"status":     500,
+			"statusText": "INTERNAL_SERVER_ERROR",
+			"message":    "Error finding record in the Database",
+		}
+		fmt.Println(err)
+		json.NewEncoder(res).Encode(resp)
+		return
+	}
+
+	// Closed positions change the average-entry-price, separate SQL query
+	if err := db.Table("user_positions").Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "account_id"}, {Name: "questrade_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"open_quantity", "closed_quantity", "total_entry", "status"}),
+	}).Create(&closedPositions).Error; err != nil {
 		res.WriteHeader(500)
 		var resp = map[string]interface{}{
 			"status":     500,
