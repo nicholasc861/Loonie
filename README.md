@@ -1,6 +1,6 @@
-# Questrack
+# Loonie
 
-Questrack utilizes the Questrade API to retrieve information about your investment portfolio on Questrade. 
+Loonie utilizes the Questrade API to retrieve information about your investment portfolio on Questrade. 
 
 With Questrack you can:
 - See real-time profit/losses on your active positions
@@ -9,4 +9,4 @@ With Questrack you can:
 
 ## Technologies
 
-Questrack is built using React.js, Go and PostgreSQL
+Loonie is built using React.js, Go and PostgreSQL
