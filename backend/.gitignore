@@ -1,4 +1,5 @@
 /Logo
 .envLocal
 .env
+.backend
 Procfile
