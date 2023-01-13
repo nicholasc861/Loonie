@@ -9,8 +9,6 @@ RUN wget -nv https://github.com/golang-migrate/migrate/releases/download/v4.13.0
   && rm migrate.linux-amd64.tar.gz \
   && cp migrate.linux-amd64 /bin/migrate
 
-RUN mkdir /docker-entrypoint-initdb.d/schema
-
-COPY ./migrations/* /docker-entrypoint-initdb.d/schema
+COPY ./migrations/ /migrations/
 
 COPY init.sh /docker-entrypoint-initdb.d

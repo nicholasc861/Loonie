@@ -1,22 +1,27 @@
+version: "3.9"
+
 services:
-  backend:
+  postgres:
     build:
-      context: ./backend
-    env_file: .env
-    depends_on:
-      - db
-
-  # frontend:
-  #   build:
-  #     context: ./client
-  #   volumes:
-  #     - ./react:/root
-  #   ports:
-  #     - "3000:3000"
-
-  db:
-    build:
-      context: ./db
+      context: db
     env_file: .env
     ports: 
-      - "5433:5433"
+      - "5432:5432"
+    volumes:
+      - loonie:/var/lib/postgresql/data
+  backend:
+    build:
+      context: backend
+    env_file: .env
+    depends_on:
+      - "postgres"
+    volumes:
+      - loonie:/root
+
+
+volumes:
+  loonie:
+
+
+
+

@@ -2,4 +2,6 @@
 
 DIR=$(dirname "$0")
 
-docker-compose -f $DIR/../docker-compose.yml exec db migrate -path="/docker-entrypoint-initdb.d/schema/" -database="postgres://postgres@/postgres?host=/var/run/postgresql/" $@
+docker cp $DIR/migrations postgres:./migrations/
+
+docker-compose -f $DIR/../docker-compose.yml exec postgres migrate -path="/migrations/" -database="postgres://postgres@/loonie?host=/var/run/postgresql/" $@
