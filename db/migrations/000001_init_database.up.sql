@@ -1,82 +1,87 @@
-CREATE EXTENSION "uuid-ossp" SCHEMA public;
-CREATE TYPE equity_type AS ENUM('Stock', 'Option', 'Crypto');
-CREATE TYPE side AS ENUM('Buy', 'Sell');
-CREATE TYPE option_type AS ENUM('Call', 'Put');
-
-CREATE TABLE account (
-    id uuid DEFAULT uuid_generate_v4(),
-    provider_account_id text NOT NULL,
-    nickname text NOT NULL,
-    PRIMARY KEY (id)
+CREATE TABLE "user" (
+    id uuid DEFAULT uuidv7() PRIMARY KEY,
+    name text NOT NULL,
+    email_address text UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE balance (
-    id uuid DEFAULT uuid_generate_v4(),
-    account_id uuid NOT NULL,
-    date timestamp NOT NULL,
-    amount float,
-    PRIMARY KEY (id),
-    FOREIGN KEY (account_id) REFERENCES account(id)
-);
-
-
-CREATE TABLE stock_info (
-    id uuid DEFAULT uuid_generate_v4(),
-    qt_id text NOT NULL,
-    ticker text NOT NULL,
+CREATE TABLE category (
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    user_id uuid REFERENCES "user"(id),
     description text NOT NULL,
-    PRIMARY KEY (id)
+    parent_id uuid REFERENCES category(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    UNIQUE(user_id, description, parent_id)
 );
 
-CREATE TABLE option_info (
-    id uuid DEFAULT uuid_generate_v4(),
-    qt_id text NOT NULL,
-    ticker text NOT NULL,
-    description text NOT NULL,
-    expiration timestamp NOT NULL,
-    strike float NOT NULL,
-    type option_type NOT NULL,
-    PRIMARY KEY (id)
+CREATE TABLE payment_method (
+    id uuid DEFAULT uuidv7() PRIMARY KEY,
+    user_id uuid REFERENCES "user"(id),
+    label varchar,
+    type varchar NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE crypto_info (
-    id uuid DEFAULT uuid_generate_v4(),
-    qt_id text NOT NULL,
-    ticker text NOT NULL,
-    description text NOT NULL,
-    PRIMARY KEY (id)
+CREATE TABLE rewards_program (
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    issuer varchar,
+    issuer_type varchar, --- i.e. Airline, Bank Rewards Program, Hotel
+    name varchar,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE trade_group (
-    id uuid DEFAULT uuid_generate_v4(),
-    account_id uuid NOT NULL,
-    option_id uuid,
-    stock_id uuid,
-    crypto_id uuid,
-    type equity_type NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (account_id) REFERENCES account(id),
-    FOREIGN KEY (option_id) REFERENCES option_info(id),
-    FOREIGN KEY (stock_id) REFERENCES stock_info(id),
-    FOREIGN KEY (crypto_id) REFERENCES crypto_info(id)
+CREATE TABLE credit_card (
+    id uuid DEFAULT uuidv7() PRIMARY KEY,
+    rewards_program_id uuid REFERENCES rewards_program(id),
+    issuer varchar NOT NULL,
+    name varchar NOT NULL,
+    network varchar NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    UNIQUE (issuer, name)
 );
 
-CREATE TABLE trade (
-    id uuid DEFAULT uuid_generate_v4(),
-    trade_group_id uuid NOT NULL,
-    date timestamp NOT NULL,
-    price float NOT NULL,
-    quantity float NOT NULL,
-    commission float NOT NULL,
-    gross_amount float NOT NULL,
-    net_amount float NOT NULL,
-    side side NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (trade_group_id) REFERENCES trade_group(id)
+CREATE TABLE user_credit_card (
+    payment_method_id uuid REFERENCES payment_method(id),
+    credit_card_id uuid REFERENCES credit_card(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
+CREATE TABLE transaction (
+    id uuid DEFAULT uuidv7() PRIMARY KEY,
+    category_id uuid REFERENCES category(id),
+    user_id uuid REFERENCES "user"(id) NOT NULL,
+    payment_method_id uuid REFERENCES payment_method(id),
+    credit_card_id uuid REFERENCES credit_card(id),
+    merchant_name varchar,
+    transaction_date DATE DEFAULT CURRENT_DATE,
+    description varchar,
+    amount NUMERIC(1000, 2),
+    currency_code varchar NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
+);
 
-
-
-
-
+CREATE TABLE cashback_rate (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    category_id uuid REFERENCES category(id),
+    credit_card_id uuid REFERENCES credit_card(id), --- Type of points / cashback earned
+    multiplier NUMERIC,
+    from_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
+);
